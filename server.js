@@ -607,15 +607,29 @@ app.use((req, res, next) => {
     return next();
   }
 
-  const cleanPath = decodeURIComponent(req.path).replace(/^\/+|\/+$/g, '');
+  const rawPath = decodeURIComponent(req.path);
+  
+  // SEO 301 Redirect for index.html
+  if (rawPath.endsWith('/index.html')) {
+    const cleanPath = rawPath.slice(0, -10);
+    return res.redirect(301, cleanPath === '' ? '/' : cleanPath);
+  } else if (rawPath === '/index.html') {
+    return res.redirect(301, '/');
+  }
 
-  if (!cleanPath || cleanPath === 'index.html') {
+  const cleanPath = rawPath.replace(/^\/+|\/+$/g, '');
+
+  if (!cleanPath) {
     return sendInjectedHtml(res, path.join(__dirname, 'index.html'));
   }
 
   // Check if requested path is a directory with index.html
   const dirIndexPath = path.join(__dirname, cleanPath, 'index.html');
   if (fs.existsSync(dirIndexPath)) {
+    // Force trailing slash for directories for SEO
+    if (!rawPath.endsWith('/')) {
+      return res.redirect(301, `/${cleanPath}/`);
+    }
     return sendInjectedHtml(res, dirIndexPath);
   }
 
@@ -623,7 +637,15 @@ app.use((req, res, next) => {
   if (cleanPath.endsWith('.html')) {
     const htmlFilePath = path.join(__dirname, cleanPath);
     if (fs.existsSync(htmlFilePath)) {
-      return sendInjectedHtml(res, htmlFilePath);
+      // SEO 301 Redirect to remove .html
+      return res.redirect(301, `/${cleanPath.slice(0, -5)}`);
+    } else {
+      // Check if it's a directory
+      const asDir = cleanPath.slice(0, -5);
+      const dirIndexPath = path.join(__dirname, asDir, 'index.html');
+      if (fs.existsSync(dirIndexPath)) {
+        return res.redirect(301, `/${asDir}/`);
+      }
     }
   }
 
@@ -644,7 +666,7 @@ app.use(express.static(path.join(__dirname), {
 
 // Fallback for unhandled routes
 app.use((req, res) => {
-  sendInjectedHtml(res, path.join(__dirname, 'index.html'));
+  res.status(404).send('<!DOCTYPE html><html><head><title>404 Not Found</title></head><body><h1>404 Not Found</h1><p>The page you are looking for could not be found.</p></body></html>');
 });
 
 app.listen(PORT, HOST, () => {
