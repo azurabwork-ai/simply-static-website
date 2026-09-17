@@ -15,44 +15,24 @@ const SAFETY_SCRIPT = `<script data-no-optimize="1">
       return Promise.reject(new Error('Fetch unavailable'));
     };
 
-    try {
-      delete window.fetch;
-    } catch (e) {}
+    try { delete window.fetch; } catch (e) {}
 
     try {
       Object.defineProperty(window, 'fetch', {
-        get: function() {
-          return _activeFetch;
-        },
-        set: function(fn) {
-          _activeFetch = fn;
-        },
+        value: _activeFetch,
+        writable: true,
         configurable: true,
         enumerable: true
       });
     } catch (e) {
-      try {
-        window.fetch = function() { return _activeFetch.apply(this, arguments); };
-      } catch (e2) {}
+      try { window.fetch = _activeFetch; } catch (e2) {}
     }
 
     if (typeof Window !== 'undefined' && Window.prototype) {
       try {
         Object.defineProperty(Window.prototype, 'fetch', {
-          get: function() {
-            return _activeFetch;
-          },
-          set: function(fn) {
-            _activeFetch = fn;
-            try {
-              Object.defineProperty(window, 'fetch', {
-                get: function() { return _activeFetch; },
-                set: function(f) { _activeFetch = f; },
-                configurable: true,
-                enumerable: true
-              });
-            } catch (err) {}
-          },
+          value: _activeFetch,
+          writable: true,
           configurable: true,
           enumerable: true
         });
@@ -62,8 +42,8 @@ const SAFETY_SCRIPT = `<script data-no-optimize="1">
     if (typeof globalThis !== 'undefined' && globalThis !== window) {
       try {
         Object.defineProperty(globalThis, 'fetch', {
-          get: function() { return _activeFetch; },
-          set: function(fn) { _activeFetch = fn; },
+          value: _activeFetch,
+          writable: true,
           configurable: true,
           enumerable: true
         });
@@ -73,8 +53,8 @@ const SAFETY_SCRIPT = `<script data-no-optimize="1">
     if (typeof self !== 'undefined' && self !== window) {
       try {
         Object.defineProperty(self, 'fetch', {
-          get: function() { return _activeFetch; },
-          set: function(fn) { _activeFetch = fn; },
+          value: _activeFetch,
+          writable: true,
           configurable: true,
           enumerable: true
         });
@@ -93,8 +73,8 @@ const SAFETY_SCRIPT = `<script data-no-optimize="1">
                   if (!w.fetch || !w.fetch.__safe) {
                     var ifrFetch = w.fetch ? w.fetch.bind(w) : _activeFetch;
                     Object.defineProperty(w, 'fetch', {
-                      get: function() { return ifrFetch; },
-                      set: function(fn) { ifrFetch = fn; },
+                      value: ifrFetch,
+                      writable: true,
                       configurable: true,
                       enumerable: true
                     });
