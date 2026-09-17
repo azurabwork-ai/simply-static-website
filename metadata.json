@@ -1,0 +1,8 @@
+{
+  "name": "Royal RoXn Tech",
+  "description": "Royal RoXn Tech (Pvt) Ltd. official website - Real estate listing appointment booking company and technology services.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
