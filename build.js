@@ -39,8 +39,76 @@ for (const file of files) {
   fs.cpSync(src, dest, { recursive: true });
 }
 
-// 3. Script to inject into every static HTML page for instant image reveal and animations
-const SAFETY_SCRIPT = `<script data-no-optimize="1">
+// 3. Static CSS and safety script to inject into every HTML page for logo visibility and image reveal
+const STATIC_HEAD_INJECTION = `<style id="royal-logo-and-images-fix">
+  /* Force logo visibility across all devices, headers, and themes */
+  .site-logo-img,
+  .site-branding,
+  .site-branding .site-logo-img,
+  .custom-logo-link {
+    display: inline-flex !important;
+    align-items: center !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  .site-logo-img .transparent-custom-logo {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  @media (min-width: 922px) {
+    .site-logo-img .transparent-custom-logo {
+      display: inline-flex !important;
+    }
+    .site-logo-img .ast-transparent-mobile-logo {
+      display: none !important;
+    }
+  }
+  @media (max-width: 921px) {
+    .site-logo-img .transparent-custom-logo {
+      display: none !important;
+    }
+    .site-logo-img .ast-transparent-mobile-logo {
+      display: inline-flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+  }
+  .ast-header-break-point .site-logo-img .transparent-custom-logo {
+    display: none !important;
+  }
+  .ast-header-break-point .site-logo-img .ast-transparent-mobile-logo {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  .site-logo-img img,
+  .custom-logo,
+  .custom-logo-link img,
+  .transparent-custom-logo img,
+  .ast-transparent-mobile-logo img {
+    display: block !important;
+    width: auto !important;
+    max-width: 65px !important;
+    max-height: 75px !important;
+    height: auto !important;
+    object-fit: contain !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    image-rendering: -webkit-optimize-contrast;
+  }
+  /* Reveal all Elementor animations and lazy images immediately */
+  .elementor-invisible {
+    visibility: visible !important;
+  }
+  img[data-src],
+  img[data-srcset],
+  img[data-lazyloaded] {
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+</style>
+<script data-no-optimize="1">
 (function() {
   // Universal fetch safe stub
   try {
@@ -55,18 +123,6 @@ const SAFETY_SCRIPT = `<script data-no-optimize="1">
         return true;
       }
     }, true);
-  } catch(e) {}
-
-  // Reveal all Elementor animations and lazy images immediately
-  try {
-    var style = document.createElement('style');
-    style.id = 'royal-instant-img-css';
-    style.textContent = [
-      '.elementor-invisible { visibility: visible !important; }',
-      'img[data-src], img[data-lazyloaded] { opacity: 1 !important; visibility: visible !important; }'
-    ].join('\\n');
-    var target = document.head || document.documentElement;
-    if (target) target.appendChild(style);
   } catch(e) {}
 
   // Trigger LiteSpeed lazyload immediately
@@ -106,34 +162,67 @@ const SAFETY_SCRIPT = `<script data-no-optimize="1">
 function processHtml(filePath) {
   let html = fs.readFileSync(filePath, 'utf8');
 
-  // Normalize relative wp-content paths to absolute /wp-content/
+  // Normalize all relative wp-content paths to absolute /wp-content/
   html = html.replace(/(?:(?:\.\.|\.)\/)+wp-content/g, '/wp-content');
+  html = html.replace(/(?:\.\.|\.)\\\/wp-content/g, '\\/wp-content');
 
-  // Replace data:image/svg placeholder src with real data-src
-  html = html.replace(/<img([^>]*?)src=[\x27"]data:image\/svg\+xml;base64,[^\x27"]*[\x27"]([^>]*?)>/gi, (match, before, after) => {
-    const full = before + after;
-    const dataSrcMatch = full.match(/data-src=[\x27"]([^\x27"]+)[\x27"]/i);
-    const dataSrcsetMatch = full.match(/data-srcset=[\x27"]([^\x27"]+)[\x27"]/i);
-    if (!dataSrcMatch) return match;
+  // Ensure all img tags have real src, real srcset, real sizes, and remove data-lazyloaded placeholder
+  html = html.replace(/<img\b([^>]*?)>/gi, (match, attrs) => {
+    let newAttrs = attrs;
+    const dataSrcMatch = newAttrs.match(/(?:^|\s)data-src=[\x27"]([^\x27"]+)[\x27"]/i);
+    const srcMatch = newAttrs.match(/(?:^|\s)src=[\x27"]([^\x27"]*)[\x27"]/i);
+    const dataSrcsetMatch = newAttrs.match(/(?:^|\s)data-srcset=[\x27"]([^\x27"]+)[\x27"]/i);
+    const dataSizesMatch = newAttrs.match(/(?:^|\s)data-sizes=[\x27"]([^\x27"]+)[\x27"]/i);
 
-    let res = match.replace(/src=[\x27"]data:image\/svg\+xml;base64,[^\x27"]*[\x27"]/, `src="${dataSrcMatch[1]}"`);
-    res = res.replace(/\s*data-lazyloaded=[\x27"]1[\x27"]/, '');
-    if (dataSrcsetMatch) {
-      if (res.includes('srcset=')) {
-        res = res.replace(/srcset=[\x27"][^\x27"]*[\x27"]/, `srcset="${dataSrcsetMatch[1]}"`);
-      } else {
-        res = res.replace(/<img\s+/i, `<img srcset="${dataSrcsetMatch[1]}" `);
+    // If src is missing, empty, or SVG data placeholder, replace with data-src
+    if (dataSrcMatch && dataSrcMatch[1]) {
+      const realSrc = dataSrcMatch[1];
+      if (!srcMatch || srcMatch[1].startsWith('data:image/svg') || srcMatch[1] === '') {
+        if (srcMatch) {
+          newAttrs = newAttrs.replace(/(?:^|\s)src=[\x27"][^\x27"]*[\x27"]/, ` src="${realSrc}"`);
+        } else {
+          newAttrs = ` src="${realSrc}"` + newAttrs;
+        }
       }
     }
-    return res;
+
+    // Set real srcset if data-srcset exists and is non-empty
+    if (dataSrcsetMatch && dataSrcsetMatch[1].trim() !== '') {
+      const realSrcset = dataSrcsetMatch[1];
+      if (newAttrs.match(/(?:^|\s)srcset=[\x27"][^\x27"]*[\x27"]/i)) {
+        newAttrs = newAttrs.replace(/(?:^|\s)srcset=[\x27"][^\x27"]*[\x27"]/, ` srcset="${realSrcset}"`);
+      } else {
+        newAttrs = ` srcset="${realSrcset}"` + newAttrs;
+      }
+    }
+
+    // Set real sizes if data-sizes exists and is non-empty
+    if (dataSizesMatch && dataSizesMatch[1].trim() !== '') {
+      const realSizes = dataSizesMatch[1];
+      if (newAttrs.match(/(?:^|\s)sizes=[\x27"][^\x27"]*[\x27"]/i)) {
+        newAttrs = newAttrs.replace(/(?:^|\s)sizes=[\x27"][^\x27"]*[\x27"]/, ` sizes="${realSizes}"`);
+      } else {
+        newAttrs = ` sizes="${realSizes}"` + newAttrs;
+      }
+    }
+
+    // If custom-logo has empty alt, set brand name
+    if (newAttrs.includes('custom-logo') && /alt=[\x27"][\x27"]/.test(newAttrs)) {
+      newAttrs = newAttrs.replace(/alt=[\x27"][\x27"]/, 'alt="Royal RoXn Tech (Pvt) Ltd."');
+    }
+
+    // Remove data-lazyloaded placeholder
+    newAttrs = newAttrs.replace(/\s*data-lazyloaded=[\x27"][^\x27"]*[\x27"]/gi, '');
+
+    return `<img ${newAttrs.trim()}>`;
   });
 
-  // Inject SAFETY_SCRIPT into <head> if not already present
-  if (!html.includes('royal-instant-img-css')) {
+  // Inject STATIC_HEAD_INJECTION into <head> if not already present
+  if (!html.includes('id="royal-logo-and-images-fix"')) {
     if (html.includes('<head>')) {
-      html = html.replace('<head>', `<head>${SAFETY_SCRIPT}`);
+      html = html.replace('<head>', `<head>${STATIC_HEAD_INJECTION}`);
     } else if (html.includes('<head ')) {
-      html = html.replace(/<head[^>]*>/, `$&${SAFETY_SCRIPT}`);
+      html = html.replace(/<head[^>]*>/, `$&${STATIC_HEAD_INJECTION}`);
     }
   }
 
@@ -143,6 +232,9 @@ function processHtml(filePath) {
 function findAndProcessHtml(dir) {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
   for (const entry of entries) {
+    if (entry.name === 'wp-content' || entry.name === 'wp-includes' || entry.name === 'wp-admin' || entry.name === 'node_modules' || entry.name === '.git') {
+      continue;
+    }
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       findAndProcessHtml(full);

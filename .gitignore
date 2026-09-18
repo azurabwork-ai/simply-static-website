@@ -2,9 +2,6 @@
 node_modules/
 .npm
 
-# Build Output
-public/
-
 # Environment
 .env
 .env.local
