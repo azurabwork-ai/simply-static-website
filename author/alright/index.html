@@ -56,9 +56,12 @@
     opacity: 1 !important;
     image-rendering: -webkit-optimize-contrast;
   }
-  /* Reveal all Elementor animations and lazy images immediately */
-  .elementor-invisible {
+
+  /* Reveal all Elementor animations and lazy elements immediately */
+  .elementor-invisible,
+  [data-settings*="animation"] {
     visibility: visible !important;
+    opacity: 1 !important;
   }
   img[data-src],
   img[data-srcset],
@@ -66,53 +69,159 @@
     opacity: 1 !important;
     visibility: visible !important;
   }
+
+  /* Happy Addons Card (Other Services) Image and Layout Fixes */
+  .ha-card {
+    overflow: hidden !important;
+  }
+  .ha-card > .elementor-widget-container {
+    display: flex !important;
+    align-items: stretch !important;
+  }
+  .ha-card-figure {
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    min-height: 260px !important;
+    overflow: hidden !important;
+    flex-shrink: 0 !important;
+  }
+  .ha-card--left .ha-card-figure,
+  .ha-card--right .ha-card-figure {
+    flex: 0 0 var(--ha-card-image-width, 45%) !important;
+    width: var(--ha-card-image-width, 45%) !important;
+    min-height: 280px !important;
+  }
+  .ha-card-figure img {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 260px !important;
+    max-width: 100% !important;
+    object-fit: cover !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  @media (max-width: 1024px) {
+    .ha-card > .elementor-widget-container {
+      flex-direction: column !important;
+    }
+    .ha-card-figure,
+    .ha-card--tablet-top .ha-card-figure,
+    .ha-card--mobile-top .ha-card-figure {
+      display: block !important;
+      width: 100% !important;
+      height: 280px !important;
+      min-height: 280px !important;
+    }
+    .ha-card-figure img {
+      border-radius: 5px 5px 0 0 !important;
+    }
+    .ha-card-body {
+      width: 100% !important;
+    }
+  }
+
+  /* Kevin Martin (Our Experts) Image and Card Fix */
+  .elementor-element-13d1c73,
+  .elementor-element-13d1c73 .elementor-widget-container,
+  .elementor-element-13d1c73 img,
+  img.wp-image-2436 {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 280px !important;
+    object-fit: cover !important;
+    border-radius: 8px !important;
+  }
+  .elementor-element-faff0b1,
+  .elementor-element-9f33507 {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+  }
+  .elementor-element-425301b > .elementor-container {
+    display: flex !important;
+    align-items: center !important;
+  }
+  @media (max-width: 767px) {
+    .elementor-element-425301b > .elementor-container {
+      flex-direction: column !important;
+    }
+    .elementor-element-faff0b1,
+    .elementor-element-9f33507 {
+      width: 100% !important;
+    }
+  }
 </style>
 <script data-no-optimize="1">
 (function() {
+  // Global automatic fallback to live CDN if any local image 404s
+  window.addEventListener('error', function(e) {
+    if (e && e.target && e.target.tagName === 'IMG') {
+      var img = e.target;
+      if (!img.dataset.hasRetried) {
+        img.dataset.hasRetried = 'true';
+        var src = img.getAttribute('src') || '';
+        if (src && !src.startsWith('data:') && !src.startsWith('http')) {
+          img.src = 'https://royalroxn.com' + (src.startsWith('/') ? '' : '/') + src;
+        }
+      }
+    }
+  }, true);
+
   // Universal fetch safe stub
   try {
-    var _activeFetch = (typeof window !== "undefined" && window.fetch) ? window.fetch.bind(window) : function() {
-      return Promise.reject(new Error("Fetch unavailable"));
+    var _activeFetch = (typeof window !== 'undefined' && window.fetch) ? window.fetch.bind(window) : function() {
+      return Promise.reject(new Error('Fetch unavailable'));
     };
     try { window.fetch = _activeFetch; } catch(e) {}
-    window.addEventListener("error", function(e) {
-      var msg = (e && (e.message || (e.error && e.error.message))) || "";
-      if (typeof msg === "string" && (msg.indexOf("fetch") !== -1 || msg.indexOf("cross-origin") !== -1 || msg.indexOf("SecurityError") !== -1)) {
+    window.addEventListener('error', function(e) {
+      var msg = (e && (e.message || (e.error && e.error.message))) || '';
+      if (typeof msg === 'string' && (msg.indexOf('fetch') !== -1 || msg.indexOf('cross-origin') !== -1 || msg.indexOf('SecurityError') !== -1)) {
         if (e.preventDefault) e.preventDefault();
         return true;
       }
     }, true);
   } catch(e) {}
 
-  // Trigger LiteSpeed lazyload immediately
+  // Trigger LiteSpeed lazyload immediately and force resolve images
   try {
     var triggerDelayed = function() {
-      if (typeof window.litespeed_load_delayed_js_force === "function") {
+      if (typeof window.litespeed_load_delayed_js_force === 'function') {
         window.litespeed_load_delayed_js_force();
       }
-      var imgs = document.querySelectorAll("img[data-src], img[data-srcset], img[data-lazyloaded]");
+      var imgs = document.querySelectorAll('img[data-src], img[data-srcset], img[data-lazyloaded]');
       for (var i = 0; i < imgs.length; i++) {
         var img = imgs[i];
-        var ds = img.getAttribute("data-src");
-        var dss = img.getAttribute("data-srcset");
-        if (ds && (!img.src || img.src.indexOf("data:image/svg") !== -1)) {
+        var ds = img.getAttribute('data-src');
+        var dss = img.getAttribute('data-srcset');
+        if (ds && (!img.src || img.src.indexOf('data:image/svg') !== -1)) {
           img.src = ds;
         }
-        if (dss && (!img.srcset || img.srcset.indexOf("data:image/svg") !== -1)) {
+        if (dss && (!img.srcset || img.srcset.indexOf('data:image/svg') !== -1)) {
           img.srcset = dss;
         }
-        img.removeAttribute("data-lazyloaded");
-        img.classList.add("loaded");
+        img.removeAttribute('data-lazyloaded');
+        img.classList.add('loaded');
+      }
+      var invis = document.querySelectorAll('.elementor-invisible');
+      for (var j = 0; j < invis.length; j++) {
+        invis[j].classList.remove('elementor-invisible');
       }
     };
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", triggerDelayed);
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', triggerDelayed);
     } else {
       triggerDelayed();
     }
-    window.addEventListener("load", triggerDelayed);
-    setTimeout(triggerDelayed, 100);
-    setTimeout(triggerDelayed, 500);
+    window.addEventListener('load', triggerDelayed);
+    setTimeout(triggerDelayed, 50);
+    setTimeout(triggerDelayed, 200);
+    setTimeout(triggerDelayed, 600);
     setTimeout(triggerDelayed, 1500);
   } catch(e) {}
 })();
@@ -250,9 +359,9 @@
       '  -webkit-animation-fill-mode: both !important;',
       '  animation-fill-mode: both !important;',
       '}',
-      '.elementor-invisible.animated,',
-      '.elementor-invisible.is-visible,',
-      '.elementor-invisible.elementor-animation-done {',
+      '..animated,',
+      '..is-visible,',
+      '..elementor-animation-done {',
       '  visibility: visible !important;',
       '}',
       '.elementor-image-box-img img,',
@@ -336,14 +445,14 @@
       }
 
       if (anim === 'none') {
-        el.classList.remove('elementor-invisible');
+        el.classList.remove('');
         el.classList.add('elementor-animation-done');
         el.classList.add('is-visible');
         return;
       }
 
       setTimeout(function() {
-        el.classList.remove('elementor-invisible');
+        el.classList.remove('');
         el.classList.add('elementor-animation-done');
         el.classList.add('animated');
         el.classList.add('is-visible');
@@ -360,7 +469,7 @@
     var initImageAndScrollAnimations = function() {
       resolveAllImages();
 
-      var invisibles = document.querySelectorAll('.elementor-invisible, [data-settings*="animation"]');
+      var invisibles = document.querySelectorAll('., [data-settings*="animation"]');
       if (!invisibles || !invisibles.length) return;
 
       var vHeight = window.innerHeight || document.documentElement.clientHeight || 800;
@@ -415,9 +524,9 @@
 
     setTimeout(function() {
       resolveAllImages();
-      var remaining = document.querySelectorAll('.elementor-invisible');
+      var remaining = document.querySelectorAll('.');
       for (var i = 0; i < remaining.length; i++) {
-        remaining[i].classList.remove('elementor-invisible');
+        remaining[i].classList.remove('');
         remaining[i].classList.add('elementor-animation-done');
         remaining[i].classList.add('is-visible');
       }
@@ -426,7 +535,7 @@
 })();
 </script><meta charset="UTF-8"><script data-no-optimize="1">var litespeed_docref=sessionStorage.getItem("litespeed_docref");litespeed_docref&&(Object.defineProperty(document,"referrer",{get:function(){return litespeed_docref}}),sessionStorage.removeItem("litespeed_docref"));</script> <meta name="google-site-verification" content="jmP4n0vXnBhoSUh_vOsMO53R6yQzTWbQw4rJ1fDVxzE"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="profile" href="https://gmpg.org/xfn/11"><meta name="robots" content="noindex, follow"><title>alright, Author at Royal RoXn Tech (Pvt) Ltd.</title><meta property="og:locale" content="en_US"><meta property="og:type" content="profile"><meta property="og:title" content="alright, Author at Royal RoXn Tech (Pvt) Ltd."><meta property="og:site_name" content="Royal RoXn Tech (Pvt) Ltd."><meta name="twitter:card" content="summary_large_image"> <script type="application/ld+json" class="yoast-schema-graph">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","@id":"//#website","url":"//","name":"Royal RoXn Tech (Pvt) Ltd.","description":"","publisher":{"@id":"//#organization"},"potentialAction":[{"@type":"SearchAction","target":{"@type":"EntryPoint","urlTemplate":"//?s={search_term_string}"},"query-input":"required name=search_term_string"}],"inLanguage":"en-US"},{"@type":"Organization","@id":"//#organization","name":"Royal RoXn Tech (Pvt) Ltd.","url":"//","logo":{"@type":"ImageObject","inLanguage":"en-US","@id":"//#/schema/logo/image/","url":"/wp-content/uploads/2023/11/Artboard-1-7.png","contentUrl":"/wp-content/uploads/2023/11/Artboard-1-7.png","width":600,"height":966,"caption":"Royal RoXn Tech (Pvt) Ltd."},"image":{"@id":"//#/schema/logo/image/"},"sameAs":["https://www.facebook.com/profile.php?id=61580527802823","https://www.instagram.com/royalroxn/"]}]}</script> <link rel="dns-prefetch" href="//fonts.googleapis.com"><link rel="alternate" type="application/rss+xml" title="Royal RoXn Tech (Pvt) Ltd. » Feed" href="/../../feed/"><link rel="alternate" type="application/rss+xml" title="Royal RoXn Tech (Pvt) Ltd. » Comments Feed" href="/../../comments/feed/"><link rel="alternate" type="application/rss+xml" title="Royal RoXn Tech (Pvt) Ltd. » Posts by alright Feed" href="/feed/"><link data-optimized="2" rel="stylesheet" href="/wp-content/litespeed/css/321de3a834da5886910b01ee06915f1b.css?ver=7c0cd"><link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin><!--[if IE]> <script src="/wp-content/themes/astra/assets/js/minified/flexibility.min.js" id="astra-flexibility-js"></script> <script id="astra-flexibility-js-after">flexibility(document.documentElement);</script> <![endif]--> <script data-cfasync="false" src="/wp-includes/js/jquery/jquery.min.js" id="jquery-core-js"></script> <script data-cfasync="false" src="/wp-includes/js/jquery/jquery-migrate.min.js" id="jquery-migrate-js"></script> <link rel="icon" href="/wp-content/uploads/2026/07/cropped-ChatGPT-Image-Jul-27-2026-09_10_58-AM-32x32.png" sizes="32x32"><link rel="icon" href="/wp-content/uploads/2026/07/cropped-ChatGPT-Image-Jul-27-2026-09_10_58-AM-192x192.png" sizes="192x192"><link rel="apple-touch-icon" href="/wp-content/uploads/2026/07/cropped-ChatGPT-Image-Jul-27-2026-09_10_58-AM-180x180.png"><meta name="msapplication-TileImage" content="/wp-content/uploads/2026/07/cropped-ChatGPT-Image-Jul-27-2026-09_10_58-AM-270x270.png"></head><body itemtype="https://schema.org/Blog" itemscope="itemscope" class="archive author author-alright author-1 wp-custom-logo ast-desktop ast-separate-container ast-two-container ast-no-sidebar astra-4.5.1 ast-replace-site-logo-transparent ast-inherit-site-logo-transparent ast-hfb-header elementor-default elementor-kit-307"><a class="skip-link screen-reader-text" href="#content" role="link" title="Skip to content">
 Skip to content</a><div class="hfeed site" id="page"><header class="site-header header-main-layout-1 ast-primary-menu-enabled ast-logo-title-inline ast-hide-custom-menu-mobile ast-builder-menu-toggle-icon ast-mobile-header-inline" id="masthead" itemtype="https://schema.org/WPHeader" itemscope="itemscope" itemid="#masthead"><div id="ast-desktop-header" data-toggle-type="dropdown"><div class="ast-below-header-wrap  "><div class="ast-below-header-bar ast-below-header  site-header-focus-item" data-section="section-below-header-builder"><div class="site-below-header-wrap ast-builder-grid-row-container site-header-focus-item ast-container" data-section="section-below-header-builder"><div class="ast-builder-grid-row ast-builder-grid-row-has-sides ast-builder-grid-row-no-center"><div class="site-header-below-section-left site-header-section ast-flex site-header-section-left"><div class="ast-builder-layout-element ast-flex site-header-focus-item" data-section="title_tagline"><div class="site-branding ast-site-identity" itemtype="https://schema.org/Organization" itemscope="itemscope">
-<span class="site-logo-img"><a href="/../../" class="custom-logo-link" rel="home"><img sizes="(max-width: 63px) 100vw, 63px" srcset="/wp-content/uploads/2023/11/Artboard-1-7-63x101.png 63w, /wp-content/uploads/2023/11/Artboard-1-7-186x300.png 186w, /wp-content/uploads/2023/11/Artboard-1-7.png 600w" src="/wp-content/uploads/2023/11/Artboard-1-7-63x101.png" width="63" height="101" data-src="/wp-content/uploads/2023/11/Artboard-1-7-63x101.png" class="custom-logo" alt="Royal RoXn Tech (Pvt) Ltd." decoding="async" data-srcset="/wp-content/uploads/2023/11/Artboard-1-7-63x101.png 63w, /wp-content/uploads/2023/11/Artboard-1-7-186x300.png 186w, /wp-content/uploads/2023/11/Artboard-1-7.png 600w" data-sizes="(max-width: 63px) 100vw, 63px"></a></span></div></div><div class="ast-builder-menu-1 ast-builder-menu ast-flex ast-builder-menu-1-focus-item ast-builder-layout-element site-header-focus-item" data-section="section-hb-menu-1"><div class="ast-main-header-bar-alignment"><div class="main-header-bar-navigation"><nav class="site-navigation ast-flex-grow-1 navigation-accessibility site-header-focus-item" id="primary-site-navigation-desktop" aria-label="Site Navigation" itemtype="https://schema.org/SiteNavigationElement" itemscope="itemscope"><div class="main-navigation ast-inline-flex"><ul id="ast-hf-menu-1" class="main-header-menu ast-menu-shadow ast-nav-menu ast-flex  submenu-with-border astra-menu-animation-fade  ast-menu-hover-style-zoom  stack-on-mobile"><li id="menu-item-21" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-home menu-item-21"><a href="/../../" class="menu-link">Home</a></li><li id="menu-item-19" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-19"><a href="/../../services/" class="menu-link">Services</a></li><li id="menu-item-18" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-18"><a href="/../../about/" class="menu-link">About</a></li><li id="menu-item-1096" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-1096"><a href="/../../packages/" class="menu-link">Packages</a></li><li id="menu-item-763" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-has-children menu-item-763"><a href="#" class="menu-link">Other Services<span role="application" class="dropdown-menu-toggle ast-header-navigation-arrow" tabindex="0" aria-expanded="false" aria-label="Menu Toggle"><span class="ast-icon icon-arrow"><svg class="ast-arrow-svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" x="0px" y="0px" width="26px" height="16.043px" viewbox="57 35.171 26 16.043" enable-background="new 57 35.171 26 16.043" xml:space="preserve">
+<span class="site-logo-img"><a href="/../../" class="custom-logo-link" rel="home"><img sizes="(max-width: 63px) 100vw, 63px" srcset="/wp-content/uploads/2023/11/Artboard-1-7-63x101.png 63w, /wp-content/uploads/2023/11/Artboard-1-7-186x300.png 186w, /wp-content/uploads/2023/11/Artboard-1-7.png 600w" src="/wp-content/uploads/2023/11/Artboard-1-7-63x101.png" width="63" height="101" data-src="/wp-content/uploads/2023/11/Artboard-1-7-63x101.png" class="custom-logo" alt="Royal RoXn Tech (Pvt) Ltd." decoding="async" data-srcset="/wp-content/uploads/2023/11/Artboard-1-7-63x101.png 63w, /wp-content/uploads/2023/11/Artboard-1-7-186x300.png 186w, /wp-content/uploads/2023/11/Artboard-1-7.png 600w" data-sizes="(max-width: 63px) 100vw, 63px" onerror="if(!this.dataset.hasRetried){this.dataset.hasRetried='1';var s=this.getAttribute('src')||'';if(s&&!s.startsWith('data:')&&!s.startsWith('http')){this.src='https://royalroxn.com'+(s.startsWith('/')?'':'/')+s;}}"></a></span></div></div><div class="ast-builder-menu-1 ast-builder-menu ast-flex ast-builder-menu-1-focus-item ast-builder-layout-element site-header-focus-item" data-section="section-hb-menu-1"><div class="ast-main-header-bar-alignment"><div class="main-header-bar-navigation"><nav class="site-navigation ast-flex-grow-1 navigation-accessibility site-header-focus-item" id="primary-site-navigation-desktop" aria-label="Site Navigation" itemtype="https://schema.org/SiteNavigationElement" itemscope="itemscope"><div class="main-navigation ast-inline-flex"><ul id="ast-hf-menu-1" class="main-header-menu ast-menu-shadow ast-nav-menu ast-flex  submenu-with-border astra-menu-animation-fade  ast-menu-hover-style-zoom  stack-on-mobile"><li id="menu-item-21" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-home menu-item-21"><a href="/../../" class="menu-link">Home</a></li><li id="menu-item-19" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-19"><a href="/../../services/" class="menu-link">Services</a></li><li id="menu-item-18" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-18"><a href="/../../about/" class="menu-link">About</a></li><li id="menu-item-1096" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-1096"><a href="/../../packages/" class="menu-link">Packages</a></li><li id="menu-item-763" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-has-children menu-item-763"><a href="#" class="menu-link">Other Services<span role="application" class="dropdown-menu-toggle ast-header-navigation-arrow" tabindex="0" aria-expanded="false" aria-label="Menu Toggle"><span class="ast-icon icon-arrow"><svg class="ast-arrow-svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" x="0px" y="0px" width="26px" height="16.043px" viewbox="57 35.171 26 16.043" enable-background="new 57 35.171 26 16.043" xml:space="preserve">
 <path d="M57.5,38.193l12.5,12.5l12.5-12.5l-2.5-2.5l-10,10l-10-10L57.5,38.193z"></path>
 </svg></span></span></a><button class="ast-menu-toggle" aria-expanded="false"><span class="screen-reader-text">Menu Toggle</span><span class="ast-icon icon-arrow"><svg class="ast-arrow-svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" x="0px" y="0px" width="26px" height="16.043px" viewbox="57 35.171 26 16.043" enable-background="new 57 35.171 26 16.043" xml:space="preserve">
 <path d="M57.5,38.193l12.5,12.5l12.5-12.5l-2.5-2.5l-10,10l-10-10L57.5,38.193z"></path>
@@ -441,7 +550,7 @@ Skip to content</a><div class="hfeed site" id="page"><header class="site-header 
 </svg></span>Web Development</a></li><li id="menu-item-1092" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-1092"><a href="/../../mobile-apps/" class="menu-link"><span class="ast-icon icon-arrow"><svg class="ast-arrow-svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" x="0px" y="0px" width="26px" height="16.043px" viewbox="57 35.171 26 16.043" enable-background="new 57 35.171 26 16.043" xml:space="preserve">
 <path d="M57.5,38.193l12.5,12.5l12.5-12.5l-2.5-2.5l-10,10l-10-10L57.5,38.193z"></path>
 </svg></span>Mobile Apps</a></li></ul></li></ul></div></nav></div></div></div></div><div class="site-header-below-section-right site-header-section ast-flex ast-grid-right-section"><div class="ast-builder-layout-element ast-flex site-header-focus-item ast-header-html-2" data-section="section-hb-html-2"><div class="ast-header-html inner-link-style-"><div class="ast-builder-html-element"><p>Onboard Realtors : 630+</p></div></div></div><div class="ast-builder-layout-element ast-flex site-header-focus-item ast-header-button-1" data-section="section-hb-button-1"><div class="ast-builder-button-wrap ast-builder-button-size-"><a class="ast-custom-button-link" href="/../../contact-us/" target="_self"><div class="ast-custom-button">Contact US</div></a><a class="menu-link" href="/../../contact-us/" target="_self">Contact US</a></div></div></div></div></div></div></div><div class="ast-desktop-header-content content-align-flex-start "></div></div><div id="ast-mobile-header" class="ast-mobile-header-wrap " data-type="dropdown"><div class="ast-main-header-wrap main-header-bar-wrap"><div class="ast-primary-header-bar ast-primary-header main-header-bar site-primary-header-wrap site-header-focus-item ast-builder-grid-row-layout-default ast-builder-grid-row-tablet-layout-default ast-builder-grid-row-mobile-layout-default" data-section="section-transparent-header"><div class="ast-builder-grid-row ast-builder-grid-row-has-sides ast-builder-grid-row-no-center"><div class="site-header-primary-section-left site-header-section ast-flex site-header-section-left"><div class="ast-builder-layout-element ast-flex site-header-focus-item" data-section="title_tagline"><div class="site-branding ast-site-identity" itemtype="https://schema.org/Organization" itemscope="itemscope">
-<span class="site-logo-img"><a href="/../../" class="custom-logo-link" rel="home"><img sizes="(max-width: 63px) 100vw, 63px" srcset="/wp-content/uploads/2023/11/Artboard-1-7-63x101.png 63w, /wp-content/uploads/2023/11/Artboard-1-7-186x300.png 186w, /wp-content/uploads/2023/11/Artboard-1-7.png 600w" src="/wp-content/uploads/2023/11/Artboard-1-7-63x101.png" width="63" height="101" data-src="/wp-content/uploads/2023/11/Artboard-1-7-63x101.png" class="custom-logo" alt="Royal RoXn Tech (Pvt) Ltd." decoding="async" data-srcset="/wp-content/uploads/2023/11/Artboard-1-7-63x101.png 63w, /wp-content/uploads/2023/11/Artboard-1-7-186x300.png 186w, /wp-content/uploads/2023/11/Artboard-1-7.png 600w" data-sizes="(max-width: 63px) 100vw, 63px"></a></span></div></div></div><div class="site-header-primary-section-right site-header-section ast-flex ast-grid-right-section"><div class="ast-builder-layout-element ast-flex site-header-focus-item" data-section="section-header-mobile-trigger"><div class="ast-button-wrap">
+<span class="site-logo-img"><a href="/../../" class="custom-logo-link" rel="home"><img sizes="(max-width: 63px) 100vw, 63px" srcset="/wp-content/uploads/2023/11/Artboard-1-7-63x101.png 63w, /wp-content/uploads/2023/11/Artboard-1-7-186x300.png 186w, /wp-content/uploads/2023/11/Artboard-1-7.png 600w" src="/wp-content/uploads/2023/11/Artboard-1-7-63x101.png" width="63" height="101" data-src="/wp-content/uploads/2023/11/Artboard-1-7-63x101.png" class="custom-logo" alt="Royal RoXn Tech (Pvt) Ltd." decoding="async" data-srcset="/wp-content/uploads/2023/11/Artboard-1-7-63x101.png 63w, /wp-content/uploads/2023/11/Artboard-1-7-186x300.png 186w, /wp-content/uploads/2023/11/Artboard-1-7.png 600w" data-sizes="(max-width: 63px) 100vw, 63px" onerror="if(!this.dataset.hasRetried){this.dataset.hasRetried='1';var s=this.getAttribute('src')||'';if(s&&!s.startsWith('data:')&&!s.startsWith('http')){this.src='https://royalroxn.com'+(s.startsWith('/')?'':'/')+s;}}"></a></span></div></div></div><div class="site-header-primary-section-right site-header-section ast-flex ast-grid-right-section"><div class="ast-builder-layout-element ast-flex site-header-focus-item" data-section="section-header-mobile-trigger"><div class="ast-button-wrap">
 <button type="button" class="menu-toggle main-header-menu-toggle ast-mobile-menu-trigger-minimal" aria-expanded="false">
 <span class="screen-reader-text">Main Menu</span>
 <span class="mobile-menu-toggle-icon">
@@ -461,7 +570,7 @@ Skip to content</a><div class="hfeed site" id="page"><header class="site-header 
 </svg></span>Web Development</a></li><li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-1092"><a href="/../../mobile-apps/" class="menu-link"><span class="ast-icon icon-arrow"><svg class="ast-arrow-svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" x="0px" y="0px" width="26px" height="16.043px" viewbox="57 35.171 26 16.043" enable-background="new 57 35.171 26 16.043" xml:space="preserve">
 <path d="M57.5,38.193l12.5,12.5l12.5-12.5l-2.5-2.5l-10,10l-10-10L57.5,38.193z"></path>
 </svg></span>Mobile Apps</a></li></ul></li></ul></div></nav></div></div></div></div></div></header><div id="content" class="site-content"><div class="ast-container"><div id="primary" class="content-area primary"><section class="ast-author-box ast-archive-description"><div class="ast-author-bio"><h1 class="page-title ast-archive-title">alright</h1><p></p></div><div class="ast-author-avatar">
-<img srcset="/wp-content/litespeed/avatar/cb0d5555ec12e90d8476cf021a1db40d.jpg?ver=1789419783 2x" src="/wp-content/litespeed/avatar/e136b8cb0ee0621bb1896d5b71aa6972.jpg?ver=1789419783" alt="" data-src="/wp-content/litespeed/avatar/e136b8cb0ee0621bb1896d5b71aa6972.jpg?ver=1789419783" data-srcset="/wp-content/litespeed/avatar/cb0d5555ec12e90d8476cf021a1db40d.jpg?ver=1789419783 2x" class="avatar avatar-120 photo" height="120" width="120" decoding="async"></div></section><main id="main" class="site-main"><section class="no-results not-found"><div class="page-content"><p>It seems we can’t find what you’re looking for. Perhaps searching can help.</p><form role="search" method="get" class="search-form" action="//">
+<img srcset="/wp-content/litespeed/avatar/cb0d5555ec12e90d8476cf021a1db40d.jpg?ver=1789419783 2x" src="/wp-content/litespeed/avatar/e136b8cb0ee0621bb1896d5b71aa6972.jpg?ver=1789419783" alt="" data-src="/wp-content/litespeed/avatar/e136b8cb0ee0621bb1896d5b71aa6972.jpg?ver=1789419783" data-srcset="/wp-content/litespeed/avatar/cb0d5555ec12e90d8476cf021a1db40d.jpg?ver=1789419783 2x" class="avatar avatar-120 photo" height="120" width="120" decoding="async" onerror="if(!this.dataset.hasRetried){this.dataset.hasRetried='1';var s=this.getAttribute('src')||'';if(s&&!s.startsWith('data:')&&!s.startsWith('http')){this.src='https://royalroxn.com'+(s.startsWith('/')?'':'/')+s;}}"></div></section><main id="main" class="site-main"><section class="no-results not-found"><div class="page-content"><p>It seems we can’t find what you’re looking for. Perhaps searching can help.</p><form role="search" method="get" class="search-form" action="//">
 <label>
 <span class="screen-reader-text">Search for:</span>
 <input type="search" class="search-field" placeholder="Search..." value="" name="s" tabindex="-1">
